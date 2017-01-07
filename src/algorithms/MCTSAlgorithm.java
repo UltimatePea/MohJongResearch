@@ -5,12 +5,14 @@ import java.util.ArrayList;
 import model.MohJong;
 import model.game.MohJongDrawingDelegate;
 import model.game.MohJongGame;
+import model.readable.GameReader;
 
 public class MCTSAlgorithm implements MohJongDrawingDelegate {
 	
 	private static final int INITIAL_VALUE = 1;
 	private int currentSearchPlayerNum;
 	private int[] timesSelected;
+	private int numSuccessfulTrials;
 
 	MohJongGame game;
 	
@@ -78,8 +80,15 @@ public class MCTSAlgorithm implements MohJongDrawingDelegate {
 		//populate the toplevel of decision tree
 		populateDecisionTree(tree, game.getPlayersHands().get(playerNum).getMohJongs(), INITIAL_VALUE);
 		
+		//reset counter
 		
-		for (int i = 0; i < numOfSearches; i++) {
+		numSuccessfulTrials = 0;
+		
+		int i = 0;
+		while(numSuccessfulTrials < numOfSearches){
+			i++;
+			if(i%10000 == 0) { System.out.println(i);}
+
 			//create a shallow copy
 			MohJongGame game = new MohJongGame(this.game);
 			game.setDelegate(this);
@@ -145,7 +154,10 @@ public class MCTSAlgorithm implements MohJongDrawingDelegate {
 		game.playerDrawMohJong(playerNum, false, this, true);
 		
 		//see if the player has won
+		//TODO Note the algorithm here is actually WRONG, it updates all values of the current Tree without 
+		//discriminating between players
 		if(gameWon){
+			GameReader.readableStringForPlayerHand(gameWonPlayerNum, game);
 			if(gameWonPlayerNum == currentSearchPlayerNum){
 				incrementAllValuesOnThePath(tree);
 			}
@@ -174,6 +186,7 @@ public class MCTSAlgorithm implements MohJongDrawingDelegate {
 	 * @param child
 	 */
 	private void incrementAllValuesOnThePath(DecisionTree child){
+		numSuccessfulTrials ++;
 		child.setValue(child.getValue() + 1);
 		if(child.getParent() != null){
 			incrementAllValuesOnThePath(child.getParent());
